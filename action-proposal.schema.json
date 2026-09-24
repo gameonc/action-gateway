@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/gameonc/action-gateway/action-proposal.schema.json",
+  "title": "Action Proposal",
+  "description": "What a model submits to the gateway. The model never holds credentials; it proposes, and the gateway decides.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["action", "target", "payload", "reason", "proposed_by", "idempotency_key"],
+  "properties": {
+    "action": {
+      "type": "string",
+      "description": "Must match the gateway allowlist exactly. Anything unrecognised is rejected, never interpreted.",
+      "minLength": 1
+    },
+    "target": {
+      "type": "object",
+      "description": "Explicit. The model names a system and a record; it never sends a raw URL or query.",
+      "additionalProperties": false,
+      "required": ["system"],
+      "properties": {
+        "system": { "type": "string" },
+        "location_id": { "type": "string" },
+        "record_id": { "type": "string" }
+      }
+    },
+    "payload": { "type": "object", "description": "Action-specific fields." },
+    "reason": {
+      "type": "string",
+      "description": "Required free text. Goes in the audit log. In three months this is the field that tells you what the model thought it was doing.",
+      "minLength": 1
+    },
+    "confidence": {
+      "type": "number", "minimum": 0, "maximum": 1,
+      "description": "The model's own estimate. One input to the approval decision, never the sole gate."
+    },
+    "requires_approval": {
+      "type": "boolean",
+      "description": "The model's suggestion only. The gateway overrides it. Never let the proposer decide whether it needs supervision."
+    },
+    "proposed_by": { "type": "string", "description": "Which model. Each gets its own revocable token." },
+    "idempotency_key": {
+      "type": "string",
+      "description": "Retries and duplicate sends are guaranteed. This makes them harmless.",
+      "minLength": 1
+    }
+  }
+}
