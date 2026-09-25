@@ -1,6 +1,8 @@
 # The Action Gateway
 
-**A pattern for letting AI models write to your business systems without giving them credentials.**
+**Architecture reference: separating model proposals from credentialed execution.**
+
+> Status: design document and JSON schema only. This repository does not contain a runnable gateway, credential store, approval service, or verified deployment. Do not treat it as an executable security control. The safeguards below are design requirements.
 
 Every company doing real work with LLMs hits the same wall. The model is useful when it can read your data. It's valuable when it can *act* — update the CRM, send the follow-up, create the opportunity, dispatch the job. But nobody sane wants to hand an LLM a live API key to their system of record, and the security review that follows will stop the project cold.
 
@@ -22,7 +24,7 @@ The model is a proposer. The gateway is the authority. That separation is the wh
 
 Tool calling puts the credential inside the agent's runtime. Whatever the model can call, it can call — and prompt injection, a confused-deputy chain, or an over-eager retry loop all execute with your full authority. The blast radius is everything the key can touch.
 
-Here the credential never enters the model's context or its runtime. A compromised or manipulated model can only emit a proposal, and a proposal is just JSON that gets validated by code the model never sees. The worst case degrades from *"it drained the CRM"* to *"it submitted a proposal that got rejected and logged."*
+Here the credential never enters the model's context or its runtime. A compromised or manipulated model can only emit a proposal, and a proposal is just JSON that gets validated by code the model never sees. A correctly implemented gateway can reject unauthorized proposals, but allowed harmful actions, compromised credentials, implementation bugs and authorization mistakes remain risks.
 
 It also gives you three things tool calling alone doesn't:
 
@@ -140,7 +142,7 @@ Two decisions that matter more than they look:
 
 ## Implementation notes
 
-I run this on self-hosted n8n as the gateway, with the audit log in a separate store from the application databases. But nothing here is n8n-specific — it's a Lambda, a small service, an API route. What matters is the properties, not the runtime:
+A possible implementation uses self-hosted n8n with a separate audit store. Nothing here is n8n-specific — it's a Lambda, a small service, an API route. What matters is the properties, not the runtime:
 
 - The gateway is the **only** holder of downstream credentials
 - The allowlist is **code**, not configuration a model can influence
@@ -161,14 +163,10 @@ Being straight about the limits, because a pattern oversold is a pattern nobody 
 
 ---
 
-## Why I built it
+## Motivation
 
-I run a holding company — freight brokerage and trucking, facility services, a dealership, home care. Small teams, a lot of manual back-office work, and the obvious fix was to let AI handle the repetitive parts. I got about two weeks into that before realising I was one prompt injection away from an agent doing something irreversible to a customer record, using a credential I'd given it myself.
+This design explores bounded AI actions in business workflows. The public artifact is the contract and design; implementing and verifying every property remains separate work.
 
-So the model stopped holding keys. This is what replaced it.
+*Cady Lalanne — CLD Technology. [LinkedIn](https://www.linkedin.com/in/cadylalanne/)*
 
----
-
-*Cody Lalanne — operator, Orlando FL. I build AI systems inside freight and field-service companies. [lalanne-fde.clalanne.workers.dev](https://lalanne-fde.clalanne.workers.dev)*
-
-*MIT licensed. Take it, use it, tell me what breaks.*
+*MIT licensed.*
